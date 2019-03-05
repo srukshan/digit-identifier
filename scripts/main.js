@@ -2,12 +2,12 @@
 
 var canvas = document.createElement("canvas");
 
-canvas.width = 100;
-canvas.height = 100;
+canvas.width = 112;
+canvas.height = 112;
 canvas.style = "border:5px solid gray"
 var drawable = canvas.getContext("2d");
 drawable.fillStyle = "#fff"
-drawable.fillRect(0,0,100,100);
+drawable.fillRect(0,0,112,112);
 document.body.appendChild(canvas);
 
 var textArea = document.createElement("h1");
@@ -48,23 +48,79 @@ canvas.addEventListener('mouseup',function(){
 
 var inputs = [];
 canvas.addEventListener('mouseleave',function(){
-    var data = drawable.getImageData(0,0,100,100).data;
+    var data = drawable.getImageData(0,0,112,112).data;
     
     inputs = [];
 
-    for(var i = 0, n = data.length; i < n; i += 4) {
-        var red = data[i];
-        var green = data[i + 1];
-        var blue = data[i + 2];
+    for(let i = 0, n = data.length; i < n; i += 4) {
+        let red = data[i];
+        let green = data[i + 1];
+        let blue = data[i + 2];
 
-        var gray = (red + green + blue) / 3;
+        let gray = (red + green + blue) / 3;
         inputs.push(gray);
     }
 
+    let inp = tf.tensor(inputs);
+    inp = inp.reshape([112,112]);
+    inp = inp.bufferSync();
+
+    let ninp = tf.zeros([28,28]);
+    ninp = ninp.add(tf.scalar(255));
+    ninp = ninp.bufferSync();
+
+    for(let i = 0; i < 28; i++){
+        for(let j = 0; j < 28; j++){
+            for(let k = 0; k < 4; k++){
+                for(let l = 0; l< 4; l++){
+                    let m = inp.get((i*4)+k,(j*4)+l)
+                    if(ninp.get(i,j) > m){
+                        ninp.set(m,i,j);
+                    }
+                }
+            }
+            
+        }
+    }
+
+    ninp = ninp.toTensor();
+
+    ninp = ninp.reshape([28,28,1]);
+
+    inputs = ninp.arraySync();
+
+    // console.log(inputs);
+
+    // let inp = nj.array(inputs);
+    // inp = inp.reshape(112,112);
+
+    // console.log(inp);
+
+    // let ninp = nj.zeros([28,28]);
+    // ninp.add(255);
+    // console.log(ninp);
+    // for(let i = 0; i < 28; i++){
+    //     for(let j = 0; j < 28; j++){
+    //         for(let k = 0; k < 4; k++){
+    //             for(let l = 0; l< 4; l++){
+    //                 let m = inp.get((i*4)+k,(j*4)+l)
+    //                 if(ninp.get(i,j) > m){
+    //                     ninp.set(i,j,m);
+    //                 }
+    //             }
+    //         }
+            
+    //     }
+    // }
+    // console.log(ninp);
+    // ninp = ninp.reshape(28,28,1)
+    // inputs = ninp.tolist();
+    // console.log(inputs);
+
     output = getPrediction();
     textArea.innerHTML = output.toString();
-    drawable.fillStyle = "#fff"
-    drawable.fillRect(0,0,100,100);
+    drawable.fillStyle = "#fff";
+    drawable.fillRect(0,0,112,112);
     clicked=false;
 },false);
 canvas.addEventListener('mousemove', function(event){
@@ -79,34 +135,57 @@ canvas.addEventListener('mousemove', function(event){
     }
 },false);
 
-var model = tf.sequential();
+function DIModel(inputShape = [28,28,1]){
+    const X_input = tf.input({shape: inputShape});
+    
+    const conv0 = tf.layers.conv2d({filters : 64, kernelSize : [2, 2], strides : 1}).apply(X_input);
+    const relu0 = tf.layers.reLU().apply(conv0);
+    const max0 = tf.layers.maxPooling2d([2, 2]).apply(relu0);
 
-let in_nodes = canvas.width*canvas.height;
+    const conv1 = tf.layers.conv2d({filters : 64, kernelSize : [2, 2], strides : 1}).apply(max0);
+    const relu1 = tf.layers.reLU().apply(conv1);
+    const max1 = tf.layers.maxPooling2d([2, 2]).apply(relu1);
 
+    const flat2 = tf.layers.flatten().apply(max1);
 
-model.add(tf.layers.dense({
-    units: 500,
-    inputShape: [in_nodes],
-    activation: 'sigmoid',
-    useBias: true
-}));
+    const dense3 = tf.layers.dense({units : 300, activation : 'relu'}).apply(flat2);
+    const dense4 = tf.layers.dense({units : 100, activation : 'relu'}).apply(dense3);
+    const dense5 = tf.layers.dense({units : 10, activation : 'softmax'}).apply(dense4);
 
-model.add(tf.layers.dense({
-    units: 100,
-    activation: 'relu',
-    useBias: true
-}));
+    const model = tf.model({inputs:X_input, outputs:dense5});
 
-model.add(tf.layers.dense({
-    units: 10,
-    activation: 'softmax',
-    useBias: true
-}));
+    model.compile({optimizer:'adam', loss:'categoricalCrossentropy', metrics:['accuracy']});
 
-model.compile({
-    optimizer: tf.train.adam(0.01),
-    loss: 'meanSquaredError'
-});
+    return model;
+}
+
+//var model = tf.sequential();
+
+// model.add(tf.layers.dense({
+//     units: 500,
+//     inputShape: [100,100,1],
+//     activation: 'relu',
+//     useBias: true
+// }));
+
+// model.add(tf.layers.dense({
+//     units: 100,
+//     activation: 'relu',
+//     useBias: true
+// }));
+
+// model.add(tf.layers.dense({
+//     units: 10,
+//     activation: 'softmax',
+//     useBias: true
+// }));
+
+// model.compile({
+//     optimizer: tf.train.adam(0.01),
+//     loss: 'meanSquaredError'
+// });
+
+var model = DIModel();
 
 function shapeBar(bar, height){
     height=height*100;
@@ -114,7 +193,10 @@ function shapeBar(bar, height){
 }
 
 function getPrediction(){
-    const myin = tf.tensor([inputs]);
+    let myin = tf.tensor([inputs]);
+    //const init = tf.scalar(255);
+    
+    //myin = myin.div(init);
 
     const myout = model.predict(myin).dataSync();
     var max = 0;
@@ -148,9 +230,13 @@ function train(dout){
 }
 
 function trainBatch(){
-    const myin = tf.tensor(X);
+    let myin = tf.tensor(X);
     const myout = tf.tensor(Y);
+    const init = tf.scalar(255);
+    
+    myin = myin.div(init);
 
+    console.log('training Begun')
     model.fit(myin, myout, { 
         epochs: 500
     }).then(history => {
