@@ -7,11 +7,25 @@ In this project I focused on helping others understand how AIs work by allowing 
 
 ## How it works
 
-This is a Neural Network build with a simple Sequential model using TensorFlow JS Library.
+This is a Neural Network build using TensorFlow JS Library.
 
-* The Canvas Returns a 100 by 100 pixel array as the input(0-255) to the neural Network.
-* In the First Hidden Layer I used a sigmoid as the activation function to normalise the input.
-* In the next few layers ReLu function has been used
-* At the Last Layer I used the soft max function.
 
-The script will then predict the written digit by finding the maximum of the outputs.
+| Layer (type)            | Output shape      | Param # |
+|-------------------------|-------------------|---------|
+| input1 (InputLayer)     | [ null,28,28,1 ]  | 0       |
+| conv2d_Conv2D1 (Conv2D) | [ null,27,27,64 ] | 320     |
+| re_lu_ReLU1 (ReLU)      | [null,27,27,64]   | 0       |
+| max_pooling2d_MaxPooling2D1| [null,13,13,64]| 0       |
+| conv2d_Conv2D2 (Conv2D) | [null,12,12,64]   | 16448   |
+| re_lu_ReLU2 (ReLU)      | [null,12,12,64]   | 0       |
+| max_pooling2d_MaxPooling2D2| [null,6,6,64]  | 0       |
+| flatten_Flatten1 (Flatten) | [null,2304]    | 0       |
+| dense_Dense1 (Dense)    | [null,300]        | 691500  |
+| dense_Dense2 (Dense)    | [null,100]        | 30100   |
+| dense_Dense3 (Dense)    | [null,10]         | 1010    |
+_________________________________________________________
+Total params: 739378
+
+Trainable params: 739378
+
+Non-trainable params: 0
