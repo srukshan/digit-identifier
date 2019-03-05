@@ -12,8 +12,8 @@ This is a Neural Network build using TensorFlow JS Library.
 
 | Layer (type)            | Output shape      | Param # |
 |-------------------------|-------------------|---------|
-| input1 (InputLayer)     | [ null,28,28,1 ]  | 0       |
-| conv2d_Conv2D1 (Conv2D) | [ null,27,27,64 ] | 320     |
+| input1 (InputLayer)     | [null,28,28,1]    | 0       |
+| conv2d_Conv2D1 (Conv2D) | [null,27,27,64]   | 320     |
 | re_lu_ReLU1 (ReLU)      | [null,27,27,64]   | 0       |
 | max_pooling2d_MaxPooling2D1| [null,13,13,64]| 0       |
 | conv2d_Conv2D2 (Conv2D) | [null,12,12,64]   | 16448   |
